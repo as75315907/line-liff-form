@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 租金行情估價表單</title>
+    <!-- 引入 Tailwind CSS 快速美化 UI -->
+    <script src="https://tailwindcss.com"></script>
+    <!-- 引入 LINE LIFF 官方 SDK -->
+    <script src="https://line-scdn.net"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-10">
+
+    <!-- 頂部視覺導航列 -->
+    <div class="bg-emerald-600 text-white px-4 py-5 shadow-md text-center">
+        <h1 class="text-xl font-bold flex justify-center items-center gap-2">
+            📊 桃園租金實價 AI 估價系統
+        </h1>
+        <p class="text-xs text-emerald-100 mt-1">請填寫您的物件條件，系統將自動比對周邊 500m 實價登錄</p>
+    </div>
+
+    <!-- 表單主要區塊 -->
+    <form id="valuationForm" class="max-w-md mx-auto px-4 mt-6 space-y-6">
+        
+        <!-- 1. 出租地址 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <label class="block text-sm font-bold text-gray-700 mb-2">🏠 物件出租地址</label>
+            <input type="text" id="address" required 
+                   class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm text-gray-800"
+                   placeholder="例如：桃園區中正路100號">
+            <p class="text-xxs text-gray-400 mt-1">※ 本系統目前專注提供桃園市 13 區數據支援</p>
+        </div>
+
+        <!-- 2. 建物型態 (膠囊複選鈕設計，免下拉選單) -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <label class="block text-sm font-bold text-gray-700 mb-3">🏢 建物型態</label>
+            <div class="grid grid-cols-3 gap-2" id="typeGroup">
+                <button type="button" data-value="住宅大樓" class="type-btn py-2.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 border-2 border-emerald-500 text-center">住宅大樓</button>
+                <button type="button" data-value="公寓" class="type-btn py-2.5 text-xs font-medium rounded-lg bg-white text-gray-600 border border-gray-200 text-center">公寓</button>
+                <button type="button" data-value="透天厝" class="type-btn py-2.5 text-xs font-medium rounded-lg bg-white text-gray-600 border border-gray-200 text-center">透天厝</button>
+                <button type="button" data-value="套房" class="type-btn py-2.5 text-xs font-medium rounded-lg bg-white text-gray-600 border border-gray-200 text-center">獨立套房</button>
+            </div>
+            <input type="hidden" id="build_type" value="住宅大樓">
+        </div>
+
+        <!-- 3. 建物坪數與格局 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">📐 建物室內坪數</label>
+                <div class="relative rounded-lg shadow-sm">
+                    <input type="number" id="ping" required min="1" step="0.1"
+                           class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm" 
+                           placeholder="請輸入權狀或實際租賃坪數">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500 text-sm">坪</div>
+                </div>
+            </div>
+
+            <!-- 格房計數器 -->
+            <div class="flex items-center justify-between border-t border-gray-100 pt-3">
+                <span class="text-sm font-bold text-gray-700">🛏️ 房間現況格局</span>
+                <div class="flex items-center gap-3">
+                    <button type="button" id="btnMinus" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center font-bold text-gray-600 bg-gray-50 active:bg-gray-200">-</button>
+                    <span id="roomCount" class="text-sm font-bold text-gray-800 w-4 text-center">3</span>
+                    <button type="button" id="btnPlus" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center font-bold text-gray-600 bg-gray-50 active:bg-gray-200">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 出租模式與車位 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700">🤝 出租模式</label>
+                    <p class="text-xxs text-gray-400 mt-0.5">一般租賃依市價估算，社宅將自動調整為市價8-9折</p>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="is_social" class="sr-only peer">
+                    <label for="is_social" class="relative w-24 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-['一般'] peer-checked:after:content-['社宅'] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-7 after:w-11 after:transition-all after:flex after:items-center after:after:justify-center after:text-xxs after:font-bold after:text-gray-500 peer-checked:after:text-emerald-600 peer-checked:bg-emerald-500 cursor-pointer"></label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 固定於底部的大綠色按鈕 -->
+        <div class="pt-2">
+            <button type="submit" id="btnSubmit" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-700 active:transform active:scale-98 transition-all text-base">
+                🚀 開始智能大數據估價
+            </button>
+        </div>
+    </form>
+
+    <!-- JavaScript 互動與 LINE SDK 串接 -->
+    <script>
+        // 1. 初始化 LINE LIFF [註二]
+        // 請將 'YOUR_LIFF_ID' 替換為 LINE Developer 後台生成的真實 LIFF ID 字串
+        liff.init({ liffId: 'YOUR_LIFF_ID' })
+            .then(() => {
+                if (!liff.isLoggedIn()) {
+                    liff.login(); /*若在外部瀏覽器打開，自動導向 LINE 登入 [註二]*/
+                }
+            })
+            .catch((err) => {
+                console.error('LIFF 初始化失敗:', err);
+            });
+
+        // 2. UI 互動邏輯：建物型態膠囊按鈕點擊切換
+        const typeButtons = document.querySelectorAll('.type-btn');
+        const buildTypeInput = document.getElementById('build_type');
+
+        typeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeButtons.forEach(b => {
+                    b.classList.remove('bg-emerald-50', 'text-emerald-700', 'border-emerald-500', 'border-2');
+                    b.classList.add('bg-white', 'text-gray-600', 'border-gray-200', 'border');
+                });
+                btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200', 'border');
+                btn.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-500', 'border-2');
+                buildTypeInput.value = btn.getAttribute('data-value');
+            });
+        });
+
+        // 3. UI 互動邏輯：房間格局加減計數器
+        let currentRooms = 3;
+        const roomCountSpan = document.getElementById('roomCount');
+        document.getElementById('btnMinus').addEventListener('click', () => {
+            if(currentRooms > 1) { currentRooms--; roomCountSpan.textContent = currentRooms; }
+        });
+        document.getElementById('btnPlus').addEventListener('click', () => {
+            if(currentRooms < 10) { currentRooms++; roomCountSpan.textContent = currentRooms; }
+        });
+
+        // 4. 表單提交：將資料打包成 JSON 字串發送回 LINE 聊天室
+        document.getElementById('valuationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const address = document.getElementById('address').value;
+            const build_type = buildTypeInput.value;
+            const ping = parseFloat(document.getElementById('ping').value);
+            const is_social = document.getElementById('is_social').checked;
+
+            // 智慧防禦：因為目前還在本地測試，經緯度先固定帶入桃園中正路的假座標
+            // 未來前端串接 Google 導航標點或後端串 TGOS 時會自動更新
+            const mock_lat = 24.9936;
+            const mock_lng = 121.3114;
+
+            // 打包成與後端 main.py 100% 吻合的通關字串格式
+            const messageText = `【智能估價】{"address":"${address}","lat":${mock_lat},"lng":${mock_lng},"type":"${build_type}","rooms":${currentRooms},"ping":${ping},"is_social":${is_social}}`;
+
+            // 透過 LINE SDK 讓使用者的帳號在聊天室「自動發送發言」 [註二]
+            liff.sendMessages([{
+                type: 'text',
+                text: messageText
+            }])
+            .then(() => {
+                console.log('訊息發送成功');
+                liff.closeWindow(); // 訊息發送成功後，自動關閉 LIFF 網頁視窗回到聊天室 [註二]
+            })
+            .catch((err) => {
+                alert('發送失敗，請確保是在 LINE App 內開啟此頁面。');
+                console.error(err);
+            });
+        });
+    </script>
+</body>
+</html>
