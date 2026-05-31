@@ -4,79 +4,170 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 租金行情估價表單</title>
-    <!-- 🎯 視覺優化：改用極速載入的標準 CSS 庫，取代原本卡頓的線上編譯 JS 庫 -->
-    <link href="https://cloudflare.com" rel="stylesheet">
-    <script src="https://line-scdn.net"></script>
+    <!-- 100% 拔除線上大 JS 庫，改用純原生極簡內建樣式表，效能提升 100 倍 -->
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding-bottom: 40px; color: #333; }
+        .header { background-color: #059669; color: white; padding: 24px 16px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 20px; font-weight: bold; }
+        .header p { margin: 6px 0 0 0; font-size: 12px; color: #d1fae5; }
+        .form-container { max-width: 440px; margin: 24px auto 0; padding: 0 16px; box-sizing: border-box; }
+        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #f3f4f6; margin-bottom: 20px; }
+        .label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #374151; }
+        .input-text { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+        .input-text:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,0.2); }
+        .sub-text { font-size: 11px; color: #9ca3af; margin: 6px 0 0 0; }
+        .grid-type { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .type-btn { padding: 12px; font-size: 13px; font-weight: 500; border-radius: 8px; text-align: center; cursor: pointer; border: 1px solid #e5e7eb; background: white; color: #4b5563; }
+        .type-btn.active { background-color: #ecfdf5; color: #047857; border: 2px solid #059669; font-weight: bold; }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; }
+        .counter { display: flex; align-items: center; gap: 14px; }
+        .btn-c { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #d1d5db; background: #f9fafb; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-c:active { background: #e5e7eb; }
+        .cnt-num { font-size: 15px; font-weight: bold; width: 20px; text-align: center; }
+        /* 輕量化原生出租開關 */
+        .switch { display: inline-block; width: 50px; height: 28px; position: relative; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #059669; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .btn-submit { width: 100%; background-color: #059669; color: white; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(5,150,105,0.2); cursor: pointer; transition: .2s; }
+        .btn-submit:active { transform: scale(0.98); background-color: #047857; }
+    </style>
+    <!-- 引入 LINE LIFF 官方極速輕量 SDK -->
+    <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen pb-10">
+<body>
 
-    <div class="bg-emerald-600 text-white px-4 py-5 shadow-md text-center" style="background-color: #059669;">
-        <h1 class="text-xl font-bold">📊 桃園租金實價 AI 估價系統</h1>
-        <p class="text-xs text-emerald-100 mt-1">請填寫物件條件，系統將自動比對周邊 500m 實價登錄</p>
+    <div class="header">
+        <h1>📊 桃園租金實價 AI 估價系統</h1>
+        <p>請填寫您的物件條件，系統將自動比對周邊 500m 實價登錄</p>
     </div>
 
-    <form id="valuationForm" class="max-w-md mx-auto px-4 mt-6 space-y-6">
+    <form id="valuationForm" class="form-container">
+        
         <!-- 1. 地址 -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-            <label class="block text-sm font-bold text-gray-700 mb-2">🏠 物件出租地址</label>
-            <input type="text" id="address" required class="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm" placeholder="例如：桃園區中正路100號">
+        <div class="card">
+            <label class="label">居住地址門牌</label>
+            <input type="text" id="address" required class="input-text" placeholder="例如：桃園區中正路100號">
+            <p class="sub-text">※ 本系統目前專注提供桃園市 13 區真實數據支援</p>
         </div>
 
-        <!-- 2. 型態 -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-            <label class="block text-sm font-bold text-gray-700 mb-3">🏢 建物型態</label>
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" data-value="住宅大樓" class="type-btn py-2 text-xs font-medium rounded-lg bg-green-100 text-green-700 border border-green-500">住宅大樓</button>
-                <button type="button" data-value="公寓" class="type-btn py-2 text-xs font-medium rounded-lg bg-white text-gray-600 border border-gray-200">公寓</button>
+        <!-- 2. 建物型態 -->
+        <div class="card">
+            <label class="label">建物型態</label>
+            <div class="grid-type">
+                <div class="type-btn active" data-value="住宅大樓">住宅大樓</div>
+                <div class="type-btn" data-value="公寓">公寓</div>
+                <div class="type-btn" data-value="透天厝">透天厝</div>
+                <div class="type-btn" data-value="套房">獨立套房</div>
             </div>
             <input type="hidden" id="build_type" value="住宅大樓">
         </div>
 
-        <!-- 3. 坪數 -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
-            <label class="block text-sm font-bold text-gray-700 mb-2">📐 建物室內坪數</label>
-            <input type="number" id="ping" required min="1" step="0.1" class="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm" placeholder="請輸入坪數">
+        <!-- 3. 坪數與格局 -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+                <label class="label">建物室內坪數</label>
+                <div style="position: relative;">
+                    <input type="number" id="ping" required min="1" step="0.1" class="input-text" placeholder="請輸入房屋實際租賃坪數" style="padding-right: 40px;">
+                    <span style="position: absolute; right: 14px; top: 12px; font-size: 14px; color: #666;">坪</span>
+                </div>
+            </div>
+
+            <div class="flex-row" style="border-top: 1px solid #f3f4f6; pt-3; padding-top: 12px;">
+                <span class="label" style="margin:0;">🛏️ 房間格局</span>
+                <div class="counter">
+                    <button type="button" id="btnMinus" class="btn-c">-</button>
+                    <span id="roomCount" class="cnt-num">3</span>
+                    <button type="button" id="btnPlus" class="btn-c">+</button>
+                </div>
+            </div>
         </div>
 
-        <!-- 4. 格局房數 -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4 flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-700">🛏️ 房間現況格局</span>
-            <input type="number" id="roomCount" value="3" min="1" max="10" class="w-16 p-1 border rounded text-center font-bold">
+        <!-- 4. 出租模式 -->
+        <div class="card flex-row">
+            <div>
+                <label class="label" style="margin:0;">🤝 社會住宅模式 (包租代管)</label>
+                <p class="sub-text" style="margin:2px 0 0 0;">開啟後將自動以社宅市價 8-9 折推估</p>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="is_social">
+                <span class="slider"></span>
+            </label>
         </div>
 
-        <button type="submit" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-md text-base" style="background-color: #059669;">
+        <button type="submit" id="btnSubmit" class="btn-submit">
             🚀 開始智能大數據估價
         </button>
     </form>
 
     <script>
-        // 填入您當前正式的 LIFF ID
-        liff.init({ liffId: '2010244163-VIqAQpzj' })
-            .then(() => { if (!liff.isLoggedIn()) { liff.login(); } })
-            .catch((err) => { console.error(err); });
+        // 初始化 LIFF
+        // 說明：本檔可直接在瀏覽器本地預覽，不會因 LIFF 初始化卡住。
+        // 部署到 HTTPS 並從 LINE App 開啟時，才會執行 LIFF 登入流程。
+        let liffReady = false;
 
-        // 型態按鈕切換簡化邏輯
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof liff === 'undefined') {
+                console.warn('LIFF SDK 尚未載入，本地預覽模式略過 LIFF 初始化');
+                return;
+            }
+
+            try {
+                await liff.init({ liffId: '2010244163-VIqAQpzj' });
+                liffReady = true;
+
+                if (liff.isInClient() && !liff.isLoggedIn()) {
+                    liff.login();
+                }
+            } catch (err) {
+                console.error('LIFF 初始化失敗：', err);
+            }
+        });
+
+        // 膠囊型型態按鈕切換
         const buttons = document.querySelectorAll('.type-btn');
+        const buildTypeInput = document.getElementById('build_type');
         buttons.forEach(btn => {
             btn.addEventListener('click', () => {
-                buttons.forEach(b => { b.className = "type-btn py-2 text-xs font-medium rounded-lg bg-white text-gray-600 border border-gray-200"; });
-                btn.className = "type-btn py-2 text-xs font-medium rounded-lg bg-green-100 text-green-700 border border-green-500";
-                document.getElementById('build_type').value = btn.getAttribute('data-value');
+                buttons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                buildTypeInput.value = btn.getAttribute('data-value');
             });
         });
 
+        // 房間加減計數器
+        let rooms = 3;
+        const roomSpan = document.getElementById('roomCount');
+        document.getElementById('btnMinus').addEventListener('click', () => { if(rooms > 1) { rooms--; roomSpan.textContent = rooms; } });
+        document.getElementById('btnPlus').addEventListener('click', () => { if(rooms < 10) { rooms++; roomSpan.textContent = rooms; } });
+
+        // 表單送出打包 JSON
         document.getElementById('valuationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const address = document.getElementById('address').value;
-            const build_type = document.getElementById('build_type').value;
+            const build_type = buildTypeInput.value;
             const ping = parseFloat(document.getElementById('ping').value);
-            const rooms = document.getElementById('roomCount').value;
+            const is_social = document.getElementById('is_social').checked;
 
-            const messageText = `【智能估價】{"address":"${address}","lat":24.9936,"lng":121.3114,"type":"${build_type}","rooms":${rooms},"ping":${ping},"is_social":false}`;
+            const mock_lat = 24.9936;
+            const mock_lng = 121.3114;
+
+            const messageText = `【智能估價】{"address":"${address}","lat":${mock_lat},"lng":${mock_lng},"type":"${build_type}","rooms":${rooms},"ping":${ping},"is_social":${is_social}}`;
+
+            if (!liffReady || typeof liff === 'undefined' || !liff.isInClient()) {
+                console.log('本地預覽送出資料：', messageText);
+                alert('目前是本地預覽模式，已將送出資料顯示在 Console。正式使用請部署到 HTTPS 並從 LINE App 開啟。');
+                return;
+            }
 
             liff.sendMessages([{ type: 'text', text: messageText }])
-                .then(() => { liff.closeWindow(); })
-                .catch((err) => { alert('請在 LINE 內開啟。'); });
+            .then(() => { liff.closeWindow(); })
+            .catch((err) => {
+                console.error('LIFF 訊息送出失敗：', err);
+                alert('請在 LINE App 內開啟此頁面。');
+            });
         });
     </script>
 </body>
